@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase, money, payLabel, EGOV_FIELDS, egovMonthly } from '../lib.js'
+import Modal from './Modal.jsx'
 
 const EMPTY = { full_name: '', email: '', position: '', pay_type: 'monthly', monthly_salary: '', pay_rate: '', active: true,
   sss_contribution: '', sss_loan: '', pagibig_contribution: '', pagibig_loan: '', philhealth_contribution: '' }
@@ -55,8 +56,8 @@ export default function Employees() {
       {error && <div className="alert error" onClick={() => setError(null)}>{error}</div>}
 
       {form && (
-        <form className="card form-grid" onSubmit={save}>
-          <h3 className="span-all">{form.id ? 'Edit employee' : 'New employee'}</h3>
+        <Modal title={form.id ? 'Edit employee' : 'New employee'} onClose={() => setForm(null)} wide>
+        <form className="form-grid" onSubmit={save}>
           <label>Full name<input required value={form.full_name} onChange={set('full_name')} /></label>
           <label>Email<input type="email" value={form.email ?? ''} onChange={set('email')} /></label>
           <label>Position<input value={form.position ?? ''} onChange={set('position')} /></label>
@@ -121,6 +122,7 @@ export default function Employees() {
             <button className="btn primary">Save</button>
           </div>
         </form>
+        </Modal>
       )}
 
       <div className="card">

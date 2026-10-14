@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { supabase, isConfigured } from './lib.js'
 import Auth from './components/Auth.jsx'
-import Dashboard from './components/Dashboard.jsx'
+import QuickEntry from './components/QuickEntry.jsx'
 import Commissions from './components/Commissions.jsx'
 import RecordBook from './components/RecordBook.jsx'
 import Settings from './components/Settings.jsx'
 import Payroll from './components/Payroll.jsx'
 
 const TABS = [
-  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'quick', label: 'Quick Entry' },
   { id: 'payroll', label: 'Payroll' },
   { id: 'commissions', label: 'Commissions' },
   { id: 'records', label: 'Record Book' },
@@ -18,7 +18,7 @@ const TABS = [
 export default function App() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(isConfigured)
-  const [tab, setTab] = useState('dashboard')
+  const [tab, setTab] = useState('quick')
 
   useEffect(() => {
     if (!isConfigured) return
@@ -64,7 +64,7 @@ export default function App() {
         </div>
       </header>
       <main className="content">
-        {tab === 'dashboard' && <Dashboard onNavigate={setTab} />}
+        {tab === 'quick' && <QuickEntry />}
         {tab === 'payroll' && <Payroll />}
         {tab === 'commissions' && <Commissions />}
         {tab === 'records' && <RecordBook />}

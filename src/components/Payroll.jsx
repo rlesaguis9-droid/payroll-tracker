@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase, money, fmtDate, today, calcGross, round2, downloadCsv, payLabel, cutoffs, nextCutoff, egovForPeriod, cutoffForDate } from '../lib.js'
+import Modal from './Modal.jsx'
 
 const EMPTY = {
   employee_id: '', pay_date: today(),
@@ -179,8 +180,7 @@ export default function Payroll() {
       {error && <div className="alert error" onClick={() => setError(null)}>{error}</div>}
 
       {run && (
-        <div className="card">
-          <h3>Run semi-monthly payroll</h3>
+        <Modal title="Run 15th / 30th payroll" onClose={() => setRun(null)} wide>
           <p className="muted small">Creates a pending pay entry for every active monthly-salary employee: half their monthly salary. EGOV (SSS, PAG-IBIG, PhilHealth and loans) is deducted in full on the 30th cutoff.</p>
           <div className="form-grid">
             <label>Month<input type="month" required value={run.month} onChange={(e) => e.target.value && setRun({ ...run, month: e.target.value })} /></label>
@@ -224,12 +224,12 @@ export default function Payroll() {
               {busy ? 'Creating…' : `Create ${toCreate.length} pay entr${toCreate.length === 1 ? 'y' : 'ies'}`}
             </button>
           </div>
-        </div>
+        </Modal>
       )}
 
       {form && (
-        <form className="card form-grid" onSubmit={save}>
-          <h3 className="span-all">{form.id ? 'Edit pay entry' : 'New pay entry'}</h3>
+        <Modal title={form.id ? 'Edit pay entry' : 'New pay entry'} onClose={() => setForm(null)}>
+        <form className="form-grid" onSubmit={save}>
           <label className="span-2">
             Employee
             <select required value={form.employee_id} onChange={set('employee_id')}>
@@ -276,6 +276,7 @@ export default function Payroll() {
             <button className="btn primary">Save</button>
           </div>
         </form>
+        </Modal>
       )}
 
       <div className="card">

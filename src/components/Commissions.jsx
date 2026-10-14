@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase, money, fmtDate, today, round2, downloadCsv } from '../lib.js'
+import Modal from './Modal.jsx'
 
 const EMPTY = { date: today(), employee_id: '', service_commission: '', product_commission: '', notes: '' }
 
@@ -95,8 +96,8 @@ export default function Commissions() {
       {error && <div className="alert error" onClick={() => setError(null)}>{error}</div>}
 
       {form && (
-        <form className="card form-grid" onSubmit={save}>
-          <h3 className="span-all">{form.id ? 'Edit commission' : 'Add commission'}</h3>
+        <Modal title={form.id ? 'Edit commission' : 'Add commission'} onClose={() => setForm(null)}>
+        <form className="form-grid" onSubmit={save}>
           <label>Date<input type="date" required value={form.date} onChange={set('date')} /></label>
           <label className="span-2">
             Employee
@@ -115,6 +116,7 @@ export default function Commissions() {
             <button className="btn primary">Save</button>
           </div>
         </form>
+        </Modal>
       )}
 
       <div className="card filters">

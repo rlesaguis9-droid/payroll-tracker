@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import Employees from './Employees.jsx'
 import Appearance from './Appearance.jsx'
+import Banks from './Banks.jsx'
 
 // Add more settings pages here; each gets a button in the sub-navigation.
 const SECTIONS = [
   { id: 'employees', label: 'Employees', component: Employees },
+  { id: 'banks', label: 'Banks', component: Banks },
   { id: 'appearance', label: 'Appearance', component: Appearance },
 ]
 
