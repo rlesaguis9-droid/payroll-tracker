@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getTheme, setTheme } from '../lib.js'
+import { getTheme, setTheme, TEXT_SIZES, getTextSize, setTextSize } from '../lib.js'
 
 const OPTIONS = [
   { id: 'light', label: 'Light' },
@@ -9,6 +9,7 @@ const OPTIONS = [
 
 export default function Appearance() {
   const [theme, setThemeState] = useState(getTheme)
+  const [textSize, setTextSizeState] = useState(getTextSize)
 
   function choose(id) {
     setTheme(id)
@@ -36,6 +37,26 @@ export default function Appearance() {
                 onClick={() => choose(o.id)}
               >
                 {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="setting-row setting-divider">
+          <div>
+            <strong>Text size</strong>
+            <div className="muted small">Make all text in the app smaller or bigger. Saved on this device.</div>
+          </div>
+          <div className="segmented" role="radiogroup" aria-label="Text size">
+            {TEXT_SIZES.map((t) => (
+              <button
+                key={t.id}
+                role="radio"
+                aria-checked={textSize === t.id}
+                className={textSize === t.id ? 'segment active' : 'segment'}
+                style={{ fontSize: `${t.scale * 14}px` }}
+                onClick={() => { setTextSize(t.id); setTextSizeState(t.id) }}
+              >
+                {t.label}
               </button>
             ))}
           </div>

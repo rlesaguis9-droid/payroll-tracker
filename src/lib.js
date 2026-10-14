@@ -92,3 +92,20 @@ export const egovMonthly = (e) => round2(EGOV_FIELDS.reduce((t, k) => t + (Numbe
 // A period starting on the 16th or later counts as the 2nd cutoff.
 export const isSecondCutoff = (periodStart) => Number(String(periodStart).slice(8, 10)) >= 16
 export const egovForPeriod = (e, periodStart) => (periodStart && isSecondCutoff(periodStart) ? egovMonthly(e) : 0)
+
+// Text size: scales every font in the app. Saved per browser; index.html applies it before render.
+export const TEXT_SIZES = [
+  { id: 'small', label: 'Small', scale: 0.9 },
+  { id: 'default', label: 'Default', scale: 1 },
+  { id: 'large', label: 'Large', scale: 1.15 },
+  { id: 'xlarge', label: 'Extra large', scale: 1.3 },
+]
+const TEXT_KEY = 'textSize'
+export function getTextSize() {
+  try { return localStorage.getItem(TEXT_KEY) || 'default' } catch { return 'default' }
+}
+export function setTextSize(id) {
+  const size = TEXT_SIZES.find((t) => t.id === id) || TEXT_SIZES[1]
+  try { localStorage.setItem(TEXT_KEY, size.id) } catch {}
+  document.documentElement.style.setProperty('--text-scale', size.scale)
+}

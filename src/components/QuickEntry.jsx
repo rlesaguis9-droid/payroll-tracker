@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  supabase, money, fmtDate, today, thisMonth, round2, calcGross, egovForPeriod, cutoffs, nextCutoff, payLabel,
+  supabase, money, fmtDate, today, round2, calcGross, egovForPeriod, cutoffs, nextCutoff, payLabel,
 } from '../lib.js'
 import Modal from './Modal.jsx'
 
@@ -10,59 +10,9 @@ const bankLabel = (b) => [b.bank_name, b.account_name, mask(b.account_number)].f
 
 // Quick Entry: a step-by-step popup for recording a salary or commission payment.
 // Employee → salary cutoff or commission → where the money came from → summary → submit.
+// Always shown as the popup; after saving (or "Start over") it resets to step 1.
 export default function QuickEntry() {
-  const [open, setOpen] = useState(true) // opens as soon as the tab is chosen
-  const [recent, setRecent] = useState([])
-
-  async function loadRecent() {
-    const [pay, com] = await Promise.all([
-      supabase.from('payroll_entries').select('id, pay_date, net, status, paid_from, created_at, employees(full_name)')
-        .order('created_at', { ascending: false }).limit(8),
-      supabase.from('commissions').select('id, date, service_commission, product_commission, paid_from, created_at, employees(full_name)')
-        .order('created_at', { ascending: false }).limit(8),
-    ])
-    setRecent([
-      ...(pay.data || []).map((r) => ({ id: `p-${r.id}`, kind: 'payroll', date: r.pay_date, created_at: r.created_at, name: r.employees?.full_name, amount: Number(r.net), from: r.paid_from })),
-      ...(com.data || []).map((r) => ({ id: `c-${r.id}`, kind: 'commission', date: r.date, created_at: r.created_at, name: r.employees?.full_name, amount: Number(r.service_commission) + Number(r.product_commission), from: r.paid_from })),
-    ].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8))
-  }
-  useEffect(() => { loadRecent() }, [])
-
-  return (
-    <>
-      <div className="quick-hero card">
-        <h2>Quick Entry</h2>
-        <p className="muted">Record a salary or commission payment in a few steps.</p>
-        <button className="btn primary big" onClick={() => setOpen(true)}>+ New entry</button>
-      </div>
-
-      <div className="card">
-        <h3>Recently added</h3>
-        {recent.length === 0 ? (
-          <p className="muted">Nothing yet. Your saved entries will show here and in the Record Book.</p>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Type</th><th>Employee</th><th>Date</th><th>Paid from</th><th className="num">Amount</th></tr></thead>
-              <tbody>
-                {recent.map((r) => (
-                  <tr key={r.id}>
-                    <td data-label="Type"><span className={`badge kind-${r.kind}`}>{r.kind === 'payroll' ? 'Salary' : 'Commission'}</span></td>
-                    <td className="cell-title"><strong>{r.name}</strong></td>
-                    <td data-label="Date">{fmtDate(r.date)}</td>
-                    <td data-label="Paid from">{r.from || <span className="muted">—</span>}</td>
-                    <td data-label="Amount" className="num">{money(r.amount)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {open && <Wizard onClose={() => setOpen(false)} onSaved={loadRecent} />}
-    </>
-  )
+  return <Wizard />
 }
 
 const START = {
@@ -72,7 +22,7 @@ const START = {
   source: '', notes: '',
 }
 
-function Wizard({ onClose, onSaved }) {
+function Wizard() {
   const [step, setStep] = useState(0)
   const [d, setD] = useState(START)
   const [employees, setEmployees] = useState(null)
@@ -136,7 +86,6 @@ function Wizard({ onClose, onSaved }) {
     setSaving(false)
     if (error) return setError(error.message)
     setDone(true)
-    onSaved()
   }
 
   function again() {
@@ -147,13 +96,12 @@ function Wizard({ onClose, onSaved }) {
 
   if (done) {
     return (
-      <Modal title="Saved" onClose={onClose}>
+      <Modal title="Saved" inline>
         <div className="wizard-done">
           <div className="done-check" aria-hidden="true">✓</div>
           <p><strong>{d.kind === 'salary' ? 'Salary' : 'Commission'} for {employee?.full_name}</strong> is recorded in the Record Book.</p>
         </div>
         <div className="row end">
-          <button type="button" className="btn ghost" onClick={onClose}>Close</button>
           <button type="button" className="btn primary" onClick={again}>New entry</button>
         </div>
       </Modal>
@@ -161,7 +109,7 @@ function Wizard({ onClose, onSaved }) {
   }
 
   return (
-    <Modal title="Quick Entry" onClose={onClose}>
+    <Modal title="Quick Entry" inline>
       <ol className="steps" aria-label="Progress">
         {STEPS.map((s, i) => (
           <li key={s} className={i === step ? 'current' : i < step ? 'complete' : ''}>{s}</li>
@@ -274,6 +222,7 @@ function Wizard({ onClose, onSaved }) {
       )}
 
       <div className="row end">
+        {(step > 0 || d.employee_id) && <button type="button" className="btn link-btn" onClick={again}>Start over</button>}
         {step > 0 && <button type="button" className="btn ghost" onClick={() => setStep(step - 1)}>Back</button>}
         {step === 0 && <button type="button" className="btn primary" disabled={!canNext[0]} onClick={() => setStep(1)}>Next</button>}
         {step === 1 && (
