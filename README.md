@@ -1,7 +1,7 @@
 # Payroll Tracker
 
 A clean, minimal payroll tracker built with **React + Vite** and **Supabase** (Postgres + Auth).
-Deploys for free to **GitHub Pages**.
+Code on **GitHub**, hosted free on **Vercel**.
 
 ## Features
 - Email/password sign-in (Supabase Auth). Each user only sees their own data (Row Level Security).
@@ -17,7 +17,7 @@ Deploys for free to **GitHub Pages**.
 3. Go to **Project Settings → API** and copy the **Project URL** and the **anon public** key.
 4. Go to **Authentication → URL Configuration** and add your site URL(s) to *Redirect URLs*:
    - `http://localhost:5173`
-   - `https://<your-github-username>.github.io/<repo-name>/`
+   - `https://<your-project>.vercel.app`
 
 > The anon key is safe to expose in a browser app — Row Level Security in `schema.sql` is what protects your data.
 > Never put the `service_role` key in this app.
@@ -30,7 +30,7 @@ npm run dev
 ```
 Open http://localhost:5173 and sign up.
 
-## 3. Deploy to GitHub Pages
+## 3. Deploy (GitHub + Vercel)
 ```bash
 git init
 git add .
@@ -39,14 +39,12 @@ git branch -M main
 git remote add origin https://github.com/<your-username>/<repo-name>.git
 git push -u origin main
 ```
-Then on GitHub:
-1. **Settings → Secrets and variables → Actions → New repository secret** — add
-   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
-2. **Settings → Pages → Build and deployment → Source:** select **GitHub Actions**.
-3. Push to `main` (or re-run the workflow under **Actions**). Your app will be live at
-   `https://<your-username>.github.io/<repo-name>/`.
-
-Prefer Vercel or Netlify? Import the repo, set the same two env vars, build command `npm run build`, output `dist`.
+Then on [vercel.com/new](https://vercel.com/new):
+1. **Import** the GitHub repo. Vercel detects Vite automatically (build `npm run build`, output `dist`).
+2. Under **Environment Variables** add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+3. Click **Deploy**. Every push to `main` redeploys automatically; other branches get preview URLs.
+4. In Supabase → **Authentication → URL Configuration**, set **Site URL** to your Vercel URL
+   and add it (plus `http://localhost:5173`) to **Redirect URLs**.
 
 ## Project structure
 ```
@@ -58,7 +56,6 @@ src/components/Dashboard.jsx Summary stats
 src/components/Employees.jsx Employee CRUD
 src/components/Payroll.jsx   Pay entries CRUD, filters, totals, CSV
 src/styles.css               All styling (CSS variables at the top)
-.github/workflows/deploy.yml GitHub Pages build + deploy
 ```
 
 ## Customizing
