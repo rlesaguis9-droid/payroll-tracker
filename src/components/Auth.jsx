@@ -5,6 +5,7 @@ export default function Auth() {
   const [mode, setMode] = useState('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
 
@@ -35,14 +36,25 @@ export default function Auth() {
         </label>
         <label>
           Password
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-          />
+          <div className="password-field">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
         </label>
         {msg && <div className={`alert ${msg.type}`}>{msg.text}</div>}
         <button className="btn primary full" disabled={busy}>
