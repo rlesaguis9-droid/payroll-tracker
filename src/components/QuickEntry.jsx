@@ -41,7 +41,7 @@ function Wizard() {
   const cut = cutoffs(d.month).find((c) => c.id === Number(d.cutoff))
   const set = (k) => (e) => setD({ ...d, [k]: e.target.value })
 
-  // Salary: standard half-month pay, EGOV only on the 30th cutoff (editable).
+  // Salary: standard half-month pay and half the monthly EGOV (editable).
   useEffect(() => {
     if (d.kind === 'salary' && employee && cut) {
       setD((x) => ({ ...x, gross: calcGross(employee), deductions: egovForPeriod(employee, cut.period_start) }))

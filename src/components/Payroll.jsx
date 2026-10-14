@@ -55,7 +55,7 @@ export default function Payroll() {
     if (form && !grossEdited) setForm((f) => ({ ...f, gross: calcGross(employee, f.hours, f.overtime_hours) || '' }))
   }, [form?.employee_id, form?.hours, form?.overtime_hours, grossEdited])
 
-  // New entries: pre-fill EGOV deductions (full monthly amount on the 30th cutoff, none on the 15th).
+  // New entries: pre-fill EGOV deductions (half the monthly EGOV each cutoff).
   useEffect(() => {
     if (form && !form.id && employee) setForm((f) => ({ ...f, deductions: egovForPeriod(employee, f.pay_date) || '' }))
   }, [form?.employee_id, form?.pay_date])
@@ -183,7 +183,7 @@ export default function Payroll() {
 
       {run && (
         <Modal title="Run 15th / 30th payroll" onClose={() => setRun(null)} wide>
-          <p className="muted small">Creates a pending pay entry for every active monthly-salary employee: half their monthly salary. EGOV (SSS, PAG-IBIG, PhilHealth and loans) is deducted in full on the 30th cutoff.</p>
+          <p className="muted small">Creates a pending pay entry for every active monthly-salary employee: half their monthly salary, minus half their monthly EGOV (SSS, PAG-IBIG, PhilHealth and loans).</p>
           <div className="form-grid">
             <label>Month<input type="month" required value={run.month} onChange={(e) => e.target.value && setRun({ ...run, month: e.target.value })} /></label>
             <label>Cutoff

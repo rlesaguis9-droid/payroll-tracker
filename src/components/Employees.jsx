@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase, money, payLabel, EGOV_FIELDS, egovMonthly } from '../lib.js'
+import { supabase, money, payLabel, EGOV_FIELDS, egovMonthly, egovForPeriod } from '../lib.js'
 import Modal from './Modal.jsx'
 import useConfirm from './useConfirm.jsx'
 
@@ -116,7 +116,7 @@ export default function Employees() {
             </div>
             <div className="egov-total">
               <span>Total EGOV per month <strong>{money(egovMonthly(form))}</strong></span>
-              <span className="muted">Deducted in full on the 30th payroll</span>
+              <span className="muted">{money(egovForPeriod(form, '0000-00-01'))} deducted on the 15th, {money(egovForPeriod(form, '0000-00-16'))} on the 30th</span>
             </div>
           </fieldset>
           <div className="span-all row end">

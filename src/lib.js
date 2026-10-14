@@ -88,10 +88,16 @@ export function setTheme(theme) {
 // EGOV (government) monthly deductions stored on each employee.
 export const EGOV_FIELDS = ['sss_contribution', 'sss_loan', 'pagibig_contribution', 'pagibig_loan', 'philhealth_contribution']
 export const egovMonthly = (e) => round2(EGOV_FIELDS.reduce((t, k) => t + (Number(e?.[k]) || 0), 0))
-// EGOV is deducted in full on the 2nd cutoff (paid on the 30th); nothing on the 15th.
-// A period starting on the 16th or later counts as the 2nd cutoff.
+// EGOV is split between the two cutoffs: half on the 15th, the rest on the 30th.
+// (The 30th takes any odd centavo, so the two halves always add up to the monthly total.)
+// A period or pay date on the 16th or later counts as the 2nd cutoff.
 export const isSecondCutoff = (periodStart) => Number(String(periodStart).slice(8, 10)) >= 16
-export const egovForPeriod = (e, periodStart) => (periodStart && isSecondCutoff(periodStart) ? egovMonthly(e) : 0)
+export function egovForPeriod(e, periodStart) {
+  if (!periodStart) return 0
+  const monthly = egovMonthly(e)
+  const first = Math.floor(monthly * 50) / 100 // half, rounded down to the centavo
+  return isSecondCutoff(periodStart) ? round2(monthly - first) : first
+}
 
 // Text size: scales every font in the app. Saved per browser; index.html applies it before render.
 export const TEXT_SIZES = [
