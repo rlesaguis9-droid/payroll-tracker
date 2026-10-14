@@ -3,11 +3,6 @@ import { supabase, money, fmtDate, today, calcGross, round2, downloadCsv, payLab
 import Modal from './Modal.jsx'
 import useConfirm from './useConfirm.jsx'
 
-const EMPTY = {
-  employee_id: '', pay_date: today(),
-  hours: '', overtime_hours: '', gross: '', deductions: '', status: 'pending', notes: '',
-}
-
 // Cutoffs for last month, this month and next month, for the quick-fill dropdown.
 function nearbyCutoffs() {
   const d = new Date(); d.setDate(1)
@@ -28,6 +23,12 @@ export default function Payroll() {
   const [error, setError] = useState(null)
   const [run, setRun] = useState(null) // { month, cutoff } when the semi-monthly run panel is open
   const [busy, setBusy] = useState(false)
+  // Adding pay entries for several employees at once:
+  // { pay_date, status, source, notes, picks: { [employeeId]: { on, gross, deductions } } }
+  // gross / deductions stay null until typed, so they follow the standard amounts for the chosen date.
+  const [bulk, setBulk] = useState(null)
+  const [banks, setBanks] = useState([])
+  const [taken, setTaken] = useState([]) // employees already paid for the chosen cutoff
 
   async function load() {
     let q = supabase
@@ -44,6 +45,7 @@ export default function Payroll() {
       if (error) setError(error.message)
       else setEmployees(data)
     })
+    supabase.from('banks').select('*').eq('active', true).order('bank_name').then(({ data }) => setBanks(data || []))
   }, [])
   useEffect(() => { load() }, [])
 
@@ -55,14 +57,72 @@ export default function Payroll() {
     if (form && !grossEdited) setForm((f) => ({ ...f, gross: calcGross(employee, f.hours, f.overtime_hours) || '' }))
   }, [form?.employee_id, form?.hours, form?.overtime_hours, grossEdited])
 
-  // New entries: pre-fill EGOV deductions (half the monthly EGOV each cutoff).
-  useEffect(() => {
-    if (form && !form.id && employee) setForm((f) => ({ ...f, deductions: egovForPeriod(employee, f.pay_date) || '' }))
-  }, [form?.employee_id, form?.pay_date])
-
   function openNew() {
-    setGrossEdited(false)
-    setForm({ ...EMPTY })
+    setBulk({ pay_date: nextCutoff().pay_date, status: 'pending', source: '', notes: '', picks: {} })
+  }
+
+  // Which employees already have an entry for the cutoff this pay date falls in.
+  useEffect(() => {
+    if (!bulk?.pay_date) return
+    const { period_start, period_end } = cutoffForDate(bulk.pay_date)
+    let current = true
+    supabase.from('payroll_entries').select('employee_id').eq('period_start', period_start).eq('period_end', period_end)
+      .then(({ data }) => current && setTaken((data || []).map((r) => r.employee_id)))
+    return () => { current = false }
+  }, [bulk?.pay_date])
+
+  const pick = (e) => {
+    const p = bulk.picks[e.id] || { on: false, gross: null, deductions: null }
+    return {
+      ...p,
+      gross: p.gross ?? (calcGross(e) || ''),
+      deductions: p.deductions ?? (egovForPeriod(e, bulk.pay_date) || ''),
+    }
+  }
+  function setPick(id, changes) {
+    const prev = bulk.picks[id] || { on: false, gross: null, deductions: null }
+    const next = { ...prev, ...changes }
+    if ('gross' in changes && Number(changes.gross)) next.on = true // typing a gross ticks the employee
+    setBulk({ ...bulk, picks: { ...bulk.picks, [id]: next } })
+  }
+  const activeEmployees = employees.filter((e) => e.active)
+  const chosen = bulk ? activeEmployees.filter((e) => bulk.picks[e.id]?.on && !taken.includes(e.id) && Number(pick(e).gross) > 0) : []
+  const bulkNet = chosen.reduce((t, e) => t + (Number(pick(e).gross) || 0) - (Number(pick(e).deductions) || 0), 0)
+  const available = activeEmployees.filter((e) => !taken.includes(e.id))
+  const allOn = !!bulk && available.length > 0 && available.every((e) => bulk.picks[e.id]?.on)
+  function toggleAll() {
+    const picks = { ...bulk.picks }
+    for (const e of activeEmployees) if (!taken.includes(e.id)) picks[e.id] = { ...(picks[e.id] || { gross: null, deductions: null }), on: !allOn }
+    setBulk({ ...bulk, picks })
+  }
+
+  const mask = (n) => (n ? `•••• ${String(n).slice(-4)}` : '')
+  const bankLabel = (b) => [b.bank_name, b.account_name, mask(b.account_number)].filter(Boolean).join(' · ')
+  function sourceFields(source) {
+    if (source === 'cash') return { bank_id: null, paid_from: 'Cash' }
+    const bank = banks.find((b) => b.id === source)
+    return bank ? { bank_id: bank.id, paid_from: bankLabel(bank) } : {}
+  }
+
+  async function saveBulk(ev) {
+    ev.preventDefault()
+    setBusy(true)
+    const { period_start, period_end } = cutoffForDate(bulk.pay_date)
+    const { error } = await supabase.from('payroll_entries').insert(chosen.map((e) => ({
+      employee_id: e.id,
+      pay_date: bulk.pay_date,
+      period_start,
+      period_end,
+      gross: round2(Number(pick(e).gross) || 0),
+      deductions: round2(Number(pick(e).deductions) || 0),
+      status: bulk.status,
+      notes: bulk.notes || null,
+      ...sourceFields(bulk.source),
+    })))
+    setBusy(false)
+    if (error) return setError(error.message)
+    setBulk(null)
+    load()
   }
   function openEdit(r) {
     const { employees: _, net, created_at, user_id, ...fields } = r
@@ -229,8 +289,66 @@ export default function Payroll() {
         </Modal>
       )}
 
+      {bulk && (
+        <Modal title="New pay entries" onClose={() => setBulk(null)} wide>
+          <form onSubmit={saveBulk} className="bulk-form">
+            <div className="form-grid">
+              <label>Pay date<input type="date" required value={bulk.pay_date} onChange={(e) => setBulk({ ...bulk, pay_date: e.target.value })} /></label>
+              <label>Status
+                <select value={bulk.status} onChange={(e) => setBulk({ ...bulk, status: e.target.value })}>
+                  <option value="pending">Pending</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </label>
+              <label>Paid from
+                <select value={bulk.source} onChange={(e) => setBulk({ ...bulk, source: e.target.value })}>
+                  <option value="">Not set</option>
+                  {banks.map((b) => <option key={b.id} value={b.id}>{bankLabel(b)}</option>)}
+                  <option value="cash">Cash</option>
+                </select>
+              </label>
+              <label className="span-all">Notes (applies to all)<input value={bulk.notes} placeholder="Optional" onChange={(e) => setBulk({ ...bulk, notes: e.target.value })} /></label>
+            </div>
+            <p className="muted small">
+              {(() => { const c = cutoffForDate(bulk.pay_date); return `${c.label}: ${fmtDate(c.period_start)} – ${fmtDate(c.period_end)}. ` })()}
+              Tick the employees to pay. Gross and EGOV are filled in for monthly employees; change any amount as needed.
+            </p>
+            <div className="bulk-list">
+              <div className="bulk-row pay-row bulk-head">
+                <label className="check"><input type="checkbox" checked={allOn} disabled={!available.length} onChange={toggleAll} aria-label="Select all" /> Employee</label>
+                <span>Gross pay</span><span>Deductions (EGOV)</span><span className="num">Net</span>
+              </div>
+              {activeEmployees.map((e) => {
+                const p = pick(e)
+                const done = taken.includes(e.id)
+                return (
+                  <div key={e.id} className={p.on && !done ? 'bulk-row pay-row on' : 'bulk-row pay-row'}>
+                    <label className="check">
+                      <input type="checkbox" checked={p.on && !done} disabled={done} onChange={(ev) => setPick(e.id, { on: ev.target.checked })} />
+                      <span><strong>{e.full_name}</strong><span className="muted small"> {done ? '· already recorded for this cutoff' : `· ${payLabel(e)}`}</span></span>
+                    </label>
+                    <input type="number" min="0" step="0.01" placeholder="Gross ₱" disabled={done} aria-label={`${e.full_name} gross pay`}
+                      value={p.gross} onChange={(ev) => setPick(e.id, { gross: ev.target.value })} />
+                    <input type="number" min="0" step="0.01" placeholder="EGOV ₱" disabled={done} aria-label={`${e.full_name} deductions`}
+                      value={p.deductions} onChange={(ev) => setPick(e.id, { deductions: ev.target.value })} />
+                    <span className="num">{done ? '—' : money((Number(p.gross) || 0) - (Number(p.deductions) || 0))}</span>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="row end">
+              <span className="bulk-total">{chosen.length} employee{chosen.length === 1 ? '' : 's'} · net <strong>{money(bulkNet)}</strong></span>
+              <button type="button" className="btn ghost" onClick={() => setBulk(null)}>Cancel</button>
+              <button className="btn primary" disabled={!chosen.length || busy}>
+                {busy ? 'Saving…' : `Save ${chosen.length || ''} pay entr${chosen.length === 1 ? 'y' : 'ies'}`}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
       {form && (
-        <Modal title={form.id ? 'Edit pay entry' : 'New pay entry'} onClose={() => setForm(null)}>
+        <Modal title="Edit pay entry" onClose={() => setForm(null)}>
         <form className="form-grid" onSubmit={save}>
           <label className="span-2">
             Employee

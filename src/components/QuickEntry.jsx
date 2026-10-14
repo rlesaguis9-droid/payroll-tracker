@@ -18,7 +18,7 @@ export default function QuickEntry() {
 const START = {
   employee_id: '', kind: '',
   month: nextCutoff().month, cutoff: nextCutoff().id, gross: '', deductions: '',
-  date: today(), service: '', product: '',
+  date: today(), service: '', product: '', reimbursement: '',
   source: '', notes: '',
 }
 
@@ -60,7 +60,7 @@ function Wizard() {
   }, [d.kind, d.employee_id, d.month, d.cutoff])
 
   const net = round2((Number(d.gross) || 0) - (Number(d.deductions) || 0))
-  const commissionTotal = round2((Number(d.service) || 0) + (Number(d.product) || 0))
+  const commissionTotal = round2((Number(d.service) || 0) + (Number(d.product) || 0) + (Number(d.reimbursement) || 0))
   const bank = banks.find((b) => b.id === d.source)
   const paidFrom = d.source === 'cash' ? 'Cash' : bank ? bankLabel(bank) : ''
 
@@ -82,6 +82,7 @@ function Wizard() {
       : await supabase.from('commissions').insert({
           ...common, date: d.date,
           service_commission: round2(Number(d.service) || 0), product_commission: round2(Number(d.product) || 0),
+          reimbursement: round2(Number(d.reimbursement) || 0),
         })
     setSaving(false)
     if (error) return setError(error.message)
@@ -138,7 +139,7 @@ function Wizard() {
         <div className="wizard-step">
           <h4>What are you paying {employee?.full_name}?</h4>
           <div className="choice-grid">
-            {[['salary', 'Salary', 'A 15th or 30th cutoff'], ['commission', 'Commission', 'Service and/or product']].map(([id, label, hint]) => (
+            {[['salary', 'Salary', 'A 15th or 30th cutoff'], ['commission', 'Commission', 'Service, product, reimbursement']].map(([id, label, hint]) => (
               <button key={id} type="button" className={d.kind === id ? 'choice active' : 'choice'} onClick={() => setD({ ...d, kind: id })}>
                 <strong>{label}</strong><span className="muted small">{hint}</span>
               </button>
@@ -169,7 +170,8 @@ function Wizard() {
               <label>Date<input type="date" value={d.date} onChange={set('date')} /></label>
               <label>Service commission<input type="number" min="0" step="0.01" placeholder="0.00" value={d.service} onChange={set('service')} /></label>
               <label>Product commission<input type="number" min="0" step="0.01" placeholder="0.00" value={d.product} onChange={set('product')} /></label>
-              <div className="span-all wizard-total"><span className="muted">Total commission</span><strong>{money(commissionTotal)}</strong></div>
+              <label>Reimbursement<input type="number" min="0" step="0.01" placeholder="0.00" value={d.reimbursement} onChange={set('reimbursement')} /></label>
+              <div className="span-all wizard-total"><span className="muted">Total</span><strong>{money(commissionTotal)}</strong></div>
             </div>
           )}
         </div>
@@ -212,6 +214,7 @@ function Wizard() {
                 <dt>Date</dt><dd>{fmtDate(d.date)}</dd>
                 <dt>Service commission</dt><dd>{money(d.service || 0)}</dd>
                 <dt>Product commission</dt><dd>{money(d.product || 0)}</dd>
+                <dt>Reimbursement</dt><dd>{money(d.reimbursement || 0)}</dd>
                 <dt className="total">Total</dt><dd className="total">{money(commissionTotal)}</dd>
               </>
             )}

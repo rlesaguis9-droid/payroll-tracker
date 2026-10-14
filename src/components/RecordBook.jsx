@@ -42,9 +42,9 @@ export default function RecordBook() {
         date: r.date,
         created_at: r.created_at,
         employee: r.employees?.full_name,
-        details: `Service ${money(r.service_commission)} · Product ${money(r.product_commission)}${r.paid_from ? ` · Paid from ${r.paid_from}` : ''}`,
-        amount: Number(r.service_commission) + Number(r.product_commission),
-        status: null,
+        details: `Service ${money(r.service_commission)} · Product ${money(r.product_commission)}${Number(r.reimbursement) ? ` · Reimbursement ${money(r.reimbursement)}` : ''}${r.paid_from ? ` · Paid from ${r.paid_from}` : ''}`,
+        amount: Number(r.service_commission) + Number(r.product_commission) + Number(r.reimbursement || 0),
+        status: r.status ?? null,
         notes: r.notes,
       }))
       setRecords(

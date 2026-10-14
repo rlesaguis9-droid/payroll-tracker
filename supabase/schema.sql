@@ -112,3 +112,11 @@ alter table public.payroll_entries
 alter table public.commissions
   add column if not exists bank_id   uuid references public.banks (id) on delete set null,
   add column if not exists paid_from text;
+
+-- Reimbursement
+alter table public.commissions
+  add column if not exists reimbursement numeric(12, 2) not null default 0 check (reimbursement >= 0);
+
+-- Commission status
+alter table public.commissions
+  add column if not exists status text not null default 'paid' check (status in ('pending', 'paid'));
