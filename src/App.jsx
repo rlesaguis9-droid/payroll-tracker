@@ -46,7 +46,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">Payroll Tracker</div>
+        <div className="brand">Tr-Aces</div>
         <nav className="tabs">
           {TABS.map((t) => (
             <button key={t.id} className={tab === t.id ? 'tab active' : 'tab'} onClick={() => setTab(t.id)}>

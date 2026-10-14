@@ -24,7 +24,10 @@ export default function Auth() {
   return (
     <div className="center-page">
       <form className="card narrow" onSubmit={submit}>
-        <h1>Payroll Tracker</h1>
+        <div className="auth-brand">
+          <h1>Tr-Aces</h1>
+          <p className="tagline">The smart way to track ACES expenses.</p>
+        </div>
         <p className="muted">{mode === 'signin' ? 'Sign in to your account' : 'Create an account'}</p>
         <label>
           Email
