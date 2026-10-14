@@ -23,7 +23,7 @@ export default function Auth() {
 
   return (
     <div className="center-page">
-      <form className="card narrow" onSubmit={submit}>
+      <form className="card narrow glow-card" onSubmit={submit}>
         <div className="auth-brand">
           <h1>Tr-Aces</h1>
           <p className="tagline">The smart way to track ACES expenses.</p>

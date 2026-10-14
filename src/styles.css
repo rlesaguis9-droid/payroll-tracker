@@ -1,29 +1,36 @@
 :root {
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --text: #16181d;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --primary: #2563eb;
+  --bg: #eef6f1;
+  --surface: rgba(255, 255, 255, 0.82);
+  --text: #10201a;
+  --muted: #5f7369;
+  --border: #d3e4da;
+  --primary: #15803d;
   --primary-text: #ffffff;
   --danger: #dc2626;
   --ok-bg: #dcfce7; --ok-text: #166534;
   --warn-bg: #fef3c7; --warn-text: #92400e;
   --err-bg: #fee2e2; --err-text: #991b1b;
+  --blob-1: #86efac; --blob-2: #34d399; --blob-3: #bef264;
+  --blob-opacity: .55;
+  --glow-1: #22c55e; --glow-2: #a7f3d0; --glow-3: #10b981;
   --radius: 10px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1115;
-    --surface: #171a21;
-    --text: #e8eaee;
-    --muted: #9aa1ad;
-    --border: #2a2f3a;
-    --primary: #3b82f6;
+    --bg: #07110c;
+    --surface: rgba(14, 26, 20, 0.78);
+    --text: #e6f2eb;
+    --muted: #8fa89a;
+    --border: #1f3a2c;
+    --primary: #22c55e;
+    --primary-text: #04130a;
     --ok-bg: #14321f; --ok-text: #86efac;
     --warn-bg: #3a2c0b; --warn-text: #fcd34d;
     --err-bg: #3b1515; --err-text: #fca5a5;
+    --blob-1: #15803d; --blob-2: #047857; --blob-3: #4d7c0f;
+    --blob-opacity: .45;
+    --glow-1: #4ade80; --glow-2: #bbf7d0; --glow-3: #10b981;
     color-scheme: dark;
   }
 }
@@ -148,3 +155,39 @@ tfoot td { font-weight: 700; border-bottom: 0; }
 .auth-brand { text-align: center; margin-bottom: .25rem; }
 .auth-brand h1 { font-size: 1.9rem; letter-spacing: -.02em; margin: 0; }
 .tagline { margin: .35rem 0 0; color: var(--muted); font-size: 14px; }
+
+/* Animated, blurred background */
+.bg-fx { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.bg-fx span {
+  position: absolute; border-radius: 50%;
+  filter: blur(90px); opacity: var(--blob-opacity);
+  animation: drift 26s ease-in-out infinite alternate;
+}
+.bg-fx span:nth-child(1) { width: 46vmax; height: 46vmax; background: var(--blob-1); top: -14vmax; left: -10vmax; }
+.bg-fx span:nth-child(2) { width: 38vmax; height: 38vmax; background: var(--blob-2); bottom: -14vmax; right: -8vmax; animation-duration: 32s; animation-delay: -8s; }
+.bg-fx span:nth-child(3) { width: 30vmax; height: 30vmax; background: var(--blob-3); top: 35%; left: 45%; animation-duration: 38s; animation-delay: -16s; opacity: calc(var(--blob-opacity) * .7); }
+@keyframes drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(8vmax, 6vmax) scale(1.12); }
+  100% { transform: translate(-6vmax, 10vmax) scale(.92); }
+}
+#root { position: relative; z-index: 1; }
+.card, .topbar { backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+
+/* Sign-in card: light running around the border */
+@property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+.glow-card { position: relative; isolation: isolate; border-color: transparent; }
+.glow-card::before, .glow-card::after {
+  content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1.5px;
+  background: conic-gradient(from var(--angle), transparent 0 55%, var(--glow-3), var(--glow-2), var(--glow-1), transparent 95%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: spin 6s linear infinite; pointer-events: none;
+}
+.glow-card::after { filter: blur(14px); opacity: .8; z-index: -1; padding: 3px; }
+@keyframes spin { to { --angle: 360deg; } }
+.glow-card { box-shadow: 0 20px 60px -20px rgba(16, 185, 129, .35); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-fx span, .glow-card::before, .glow-card::after { animation: none; }
+}
