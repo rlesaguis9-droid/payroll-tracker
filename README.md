@@ -41,7 +41,8 @@ git push -u origin main
 ```
 Then on [vercel.com/new](https://vercel.com/new):
 1. **Import** the GitHub repo. Vercel detects Vite automatically (build `npm run build`, output `dist`).
-2. Under **Environment Variables** add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+2. Under **Environment Variables** add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+   (or connect Vercel's Supabase integration, which adds `SUPABASE_URL` / `SUPABASE_ANON_KEY`; both work).
 3. Click **Deploy**. Every push to `main` redeploys automatically; other branches get preview URLs.
 4. In Supabase → **Authentication → URL Configuration**, set **Site URL** to your Vercel URL
    and add it (plus `http://localhost:5173`) to **Redirect URLs**.

@@ -33,7 +33,7 @@ export default function App() {
           <h1>Setup needed</h1>
           <p className="muted">
             Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to <code>.env.local</code>{' '}
-            (or as GitHub repository secrets), then restart. See README.md.
+            (or as Vercel environment variables), then restart. See README.md.
           </p>
         </div>
       </div>
