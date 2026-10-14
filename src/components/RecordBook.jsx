@@ -11,9 +11,12 @@ const KINDS = [
 export default function RecordBook() {
   const [records, setRecords] = useState(null)
   const [kind, setKind] = useState('all')
+  const [employeeId, setEmployeeId] = useState('')
+  const [employees, setEmployees] = useState([])
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    supabase.from('employees').select('id, full_name').order('full_name').then(({ data }) => setEmployees(data || []))
     Promise.all([
       supabase.from('payroll_entries').select('*, employees(full_name)'),
       supabase.from('commissions').select('*, employees(full_name)'),
@@ -23,6 +26,7 @@ export default function RecordBook() {
       const payroll = pay.data.map((r) => ({
         id: `p-${r.id}`,
         kind: 'payroll',
+        employee_id: r.employee_id,
         date: r.pay_date,
         created_at: r.created_at,
         employee: r.employees?.full_name,
@@ -34,6 +38,7 @@ export default function RecordBook() {
       const commissions = com.data.map((r) => ({
         id: `c-${r.id}`,
         kind: 'commission',
+        employee_id: r.employee_id,
         date: r.date,
         created_at: r.created_at,
         employee: r.employees?.full_name,
@@ -50,13 +55,15 @@ export default function RecordBook() {
   }, [])
 
   const visible = useMemo(
-    () => (records || []).filter((r) => kind === 'all' || r.kind === kind),
-    [records, kind]
+    () => (records || []).filter((r) =>
+      (kind === 'all' || r.kind === kind) && (!employeeId || r.employee_id === employeeId)),
+    [records, kind, employeeId]
   )
   const total = visible.reduce((t, r) => t + r.amount, 0)
 
   function exportCsv() {
-    downloadCsv(`record-book-${today()}.csv`, visible.map((r) => ({
+    const who = employees.find((e) => e.id === employeeId)?.full_name
+    downloadCsv(`record-book-${who ? who.toLowerCase().replace(/\s+/g, '-') + '-' : ''}${today()}.csv`, visible.map((r) => ({
       date: r.date,
       type: r.kind === 'payroll' ? 'Payroll' : 'Commission',
       employee: r.employee,
@@ -72,6 +79,10 @@ export default function RecordBook() {
       <div className="page-head">
         <h2>Record Book</h2>
         <div className="row">
+          <select className="filter-select" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} aria-label="Filter by employee">
+            <option value="">All employees</option>
+            {employees.map((e) => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+          </select>
           <div className="segmented" role="tablist" aria-label="Record type">
             {KINDS.map((k) => (
               <button key={k.id} role="tab" aria-selected={kind === k.id}
@@ -90,7 +101,7 @@ export default function RecordBook() {
         {!records ? (
           <p className="muted">Loading…</p>
         ) : visible.length === 0 ? (
-          <p className="muted">No saved entries yet.</p>
+          <p className="muted">{employeeId || kind !== 'all' ? 'No entries match this filter.' : 'No saved entries yet.'}</p>
         ) : (
           <div className="table-wrap">
             <table>

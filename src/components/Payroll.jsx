@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase, money, fmtDate, today, calcGross, round2, downloadCsv, payLabel, cutoffs, nextCutoff, egovForPeriod, cutoffForDate } from '../lib.js'
 import Modal from './Modal.jsx'
+import useConfirm from './useConfirm.jsx'
 
 const EMPTY = {
   employee_id: '', pay_date: today(),
@@ -19,6 +20,7 @@ function nearbyCutoffs() {
 }
 
 export default function Payroll() {
+  const [confirmDialog, confirm] = useConfirm()
   const [rows, setRows] = useState([])
   const [employees, setEmployees] = useState([])
   const [form, setForm] = useState(null)
@@ -137,7 +139,7 @@ export default function Payroll() {
   }
 
   async function remove(r) {
-    if (!confirm('Delete this pay entry?')) return
+    if (!(await confirm('Delete this pay entry?'))) return
     const { error } = await supabase.from('payroll_entries').delete().eq('id', r.id)
     if (error) setError(error.message)
     else load()
@@ -322,6 +324,7 @@ export default function Payroll() {
           </div>
         )}
       </div>
+      {confirmDialog}
     </>
   )
 }

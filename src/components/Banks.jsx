@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib.js'
 import Modal from './Modal.jsx'
+import useConfirm from './useConfirm.jsx'
 
 const EMPTY = { bank_name: '', account_name: '', account_number: '', branch: '', notes: '', active: true }
 
@@ -8,6 +9,7 @@ const EMPTY = { bank_name: '', account_name: '', account_number: '', branch: '',
 const mask = (n) => (n ? `•••• ${String(n).slice(-4)}` : '')
 
 export default function Banks() {
+  const [confirmDialog, confirm] = useConfirm()
   const [rows, setRows] = useState([])
   const [form, setForm] = useState(null)
   const [revealed, setRevealed] = useState({})
@@ -32,7 +34,7 @@ export default function Banks() {
   }
 
   async function remove(bank) {
-    if (!confirm(`Delete ${bank.bank_name}${bank.account_number ? ` (${mask(bank.account_number)})` : ''}?`)) return
+    if (!(await confirm(`Delete ${bank.bank_name}${bank.account_number ? ` (${mask(bank.account_number)})` : ''}?`))) return
     const { error } = await supabase.from('banks').delete().eq('id', bank.id)
     if (error) setError(error.message)
     else load()
@@ -103,6 +105,7 @@ export default function Banks() {
           </div>
         )}
       </div>
+      {confirmDialog}
     </>
   )
 }

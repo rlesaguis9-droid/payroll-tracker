@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { supabase, money, payLabel, EGOV_FIELDS, egovMonthly } from '../lib.js'
 import Modal from './Modal.jsx'
+import useConfirm from './useConfirm.jsx'
 
 const EMPTY = { full_name: '', email: '', position: '', pay_type: 'monthly', monthly_salary: '', pay_rate: '', active: true,
   sss_contribution: '', sss_loan: '', pagibig_contribution: '', pagibig_loan: '', philhealth_contribution: '' }
 
 export default function Employees() {
+  const [confirmDialog, confirm] = useConfirm()
   const [rows, setRows] = useState([])
   const [form, setForm] = useState(null) // null = closed; object = add/edit
   const [showInactive, setShowInactive] = useState(false)
@@ -32,7 +34,7 @@ export default function Employees() {
   }
 
   async function remove(emp) {
-    if (!confirm(`Delete ${emp.full_name}? This also deletes all of their pay entries.`)) return
+    if (!(await confirm(`Delete ${emp.full_name}? This also deletes all of their pay entries.`))) return
     const { error } = await supabase.from('employees').delete().eq('id', emp.id)
     if (error) setError(error.message)
     else load()
@@ -154,6 +156,7 @@ export default function Employees() {
           </div>
         )}
       </div>
+      {confirmDialog}
     </>
   )
 }

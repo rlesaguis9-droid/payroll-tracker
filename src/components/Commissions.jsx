@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase, money, fmtDate, today, round2, downloadCsv } from '../lib.js'
 import Modal from './Modal.jsx'
+import useConfirm from './useConfirm.jsx'
 
 const EMPTY = { date: today(), employee_id: '', service_commission: '', product_commission: '', notes: '' }
 
 export default function Commissions() {
+  const [confirmDialog, confirm] = useConfirm()
   const [rows, setRows] = useState([])
   const [employees, setEmployees] = useState([])
   const [form, setForm] = useState(null)
@@ -58,7 +60,7 @@ export default function Commissions() {
   }
 
   async function remove(r) {
-    if (!confirm('Delete this commission?')) return
+    if (!(await confirm('Delete this commission?'))) return
     const { error } = await supabase.from('commissions').delete().eq('id', r.id)
     if (error) setError(error.message)
     else load()
@@ -168,6 +170,7 @@ export default function Commissions() {
           </div>
         )}
       </div>
+      {confirmDialog}
     </>
   )
 }
