@@ -25,7 +25,7 @@ export default function Auth() {
     <div className="center-page">
       <form className="card narrow glow-card" onSubmit={submit}>
         <div className="auth-brand">
-          <h1>Tr-Aces</h1>
+          <h1>Tr-ACES</h1>
           <p className="tagline">The smart way to track ACES expenses.</p>
         </div>
         <p className="muted">{mode === 'signin' ? 'Sign in to your account' : 'Create an account'}</p>

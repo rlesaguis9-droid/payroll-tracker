@@ -8,8 +8,15 @@ create table if not exists public.employees (
   full_name   text not null,
   email       text,
   position    text,
-  pay_type    text not null default 'hourly' check (pay_type in ('hourly', 'salary')),
-  pay_rate    numeric(12, 2) not null default 0 check (pay_rate >= 0), -- hourly rate, or salary per pay period
+  pay_type    text not null default 'monthly' check (pay_type in ('monthly', 'hourly')),
+  monthly_salary numeric(12, 2) not null default 0 check (monthly_salary >= 0), -- paid half on the 15th, half on the 30th
+  pay_rate    numeric(12, 2) not null default 0 check (pay_rate >= 0), -- hourly rate
+  -- EGOV monthly amounts
+  sss_contribution        numeric(12, 2) not null default 0 check (sss_contribution >= 0),
+  sss_loan                numeric(12, 2) not null default 0 check (sss_loan >= 0),
+  pagibig_contribution    numeric(12, 2) not null default 0 check (pagibig_contribution >= 0),
+  pagibig_loan            numeric(12, 2) not null default 0 check (pagibig_loan >= 0),
+  philhealth_contribution numeric(12, 2) not null default 0 check (philhealth_contribution >= 0),
   active      boolean not null default true,
   created_at  timestamptz not null default now()
 );
@@ -47,6 +54,29 @@ create policy "own employees" on public.employees
 
 drop policy if exists "own payroll entries" on public.payroll_entries;
 create policy "own payroll entries" on public.payroll_entries
+  for all to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
+
+-- Commissions
+create table if not exists public.commissions (
+  id                  uuid primary key default gen_random_uuid(),
+  user_id             uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  employee_id         uuid not null references public.employees (id) on delete cascade,
+  date                date not null default current_date,
+  service_commission  numeric(12, 2) not null default 0 check (service_commission >= 0),
+  product_commission  numeric(12, 2) not null default 0 check (product_commission >= 0),
+  notes               text,
+  created_at          timestamptz not null default now()
+);
+
+create index if not exists commissions_user_date_idx on public.commissions (user_id, date desc);
+create index if not exists commissions_employee_idx on public.commissions (employee_id);
+
+alter table public.commissions enable row level security;
+
+drop policy if exists "own commissions" on public.commissions;
+create policy "own commissions" on public.commissions
   for all to authenticated
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));

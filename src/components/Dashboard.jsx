@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase, money, fmtDate } from '../lib.js'
+import { supabase, money, fmtDate, thisMonth } from '../lib.js'
 
 export default function Dashboard({ onNavigate }) {
   const [stats, setStats] = useState(null)
@@ -8,7 +8,7 @@ export default function Dashboard({ onNavigate }) {
 
   useEffect(() => {
     const year = new Date().getFullYear()
-    const monthStart = new Date().toISOString().slice(0, 8) + '01'
+    const monthStart = thisMonth() + '-01'
 
     Promise.all([
       supabase.from('employees').select('id', { count: 'exact', head: true }).eq('active', true),
@@ -66,11 +66,11 @@ export default function Dashboard({ onNavigate }) {
               <tbody>
                 {recent.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.employees?.full_name}</td>
-                    <td>{fmtDate(r.pay_date)}</td>
-                    <td className="num">{money(r.gross)}</td>
-                    <td className="num">{money(r.net)}</td>
-                    <td><span className={`badge ${r.status}`}>{r.status}</span></td>
+                    <td className="cell-title">{r.employees?.full_name}</td>
+                    <td data-label="Pay date">{fmtDate(r.pay_date)}</td>
+                    <td data-label="Gross" className="num">{money(r.gross)}</td>
+                    <td data-label="Net" className="num">{money(r.net)}</td>
+                    <td data-label="Status"><span className={`badge ${r.status}`}>{r.status}</span></td>
                   </tr>
                 ))}
               </tbody>

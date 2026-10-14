@@ -2,13 +2,17 @@ import { useEffect, useState } from 'react'
 import { supabase, isConfigured } from './lib.js'
 import Auth from './components/Auth.jsx'
 import Dashboard from './components/Dashboard.jsx'
-import Employees from './components/Employees.jsx'
+import Commissions from './components/Commissions.jsx'
+import RecordBook from './components/RecordBook.jsx'
+import Settings from './components/Settings.jsx'
 import Payroll from './components/Payroll.jsx'
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'payroll', label: 'Payroll' },
-  { id: 'employees', label: 'Employees' },
+  { id: 'commissions', label: 'Commissions' },
+  { id: 'records', label: 'Record Book' },
+  { id: 'settings', label: 'Settings' },
 ]
 
 export default function App() {
@@ -46,7 +50,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">Tr-Aces</div>
+        <div className="brand">Tr-ACES</div>
         <nav className="tabs">
           {TABS.map((t) => (
             <button key={t.id} className={tab === t.id ? 'tab active' : 'tab'} onClick={() => setTab(t.id)}>
@@ -62,7 +66,9 @@ export default function App() {
       <main className="content">
         {tab === 'dashboard' && <Dashboard onNavigate={setTab} />}
         {tab === 'payroll' && <Payroll />}
-        {tab === 'employees' && <Employees />}
+        {tab === 'commissions' && <Commissions />}
+        {tab === 'records' && <RecordBook />}
+        {tab === 'settings' && <Settings />}
       </main>
     </div>
   )
